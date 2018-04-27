@@ -14,7 +14,7 @@ logger = logging.getLogger('loolmonitor')
 logger.setLevel(logging.INFO)
 logger.addHandler(ch)
 
-def start_monitor(host='127.0.0.1', port=8765):
+def start_monitor(host=None, port=8765):
     monitor = LoolMonitor(host, port)
     monitor.start()
 

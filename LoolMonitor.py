@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
-import asyncio
-import websockets
+import asyncio, functools
+import websockets, socket
 import logging
-import functools
-import os
-import signal
+import os, signal
 
 logger = logging.getLogger('loolmonitor')
 
@@ -77,7 +75,7 @@ class LoolMonitor():
     Create websocket server
     Catch SIGINT and SIGTERM to stop the server
     """
-    def __init__(self, host='127.0.0.1', port=8765):
+    def __init__(self, host=None, port=8765):
         self.__loop = None
         self.__host = host
         self.__port = port
@@ -97,7 +95,8 @@ class LoolMonitor():
                                     functools.partial(self.ask_exit, signame))
 
     def start(self):
-        start_server = websockets.serve(self.handler, self.__host, self.__port)
+        start_server = websockets.serve(self.handler, self.__host, self.__port,
+                        family=socket.AF_INET)
 
         logger.info ("listing on 'ws://{}:{}'".format(self.__host, self.__port))
         logger.info ("Event loop running forever, press Ctrl+C to interrupt.")
