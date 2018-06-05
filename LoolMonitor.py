@@ -28,7 +28,7 @@ class GenericHandler():
         self.alive = True
 
         logger.info ("New Worker {} Connected".format(websocket.remote_address))
-        debug_websocket(websocket)
+        #debug_websocket(websocket)
         logger.debug ("Path: {}".format(path))
 
     async def run(self):
@@ -39,7 +39,7 @@ class GenericHandler():
         while self.alive:
             try:
                 message = await asyncio.wait_for(self.websocket.recv(), timeout=20)
-                debug_websocket(self.websocket)
+                #debug_websocket(self.websocket)
             except websockets.exceptions.ConnectionClosed:
                 self.close()
             except asyncio.TimeoutError:
@@ -51,7 +51,7 @@ class GenericHandler():
 
     def close(self):
         logger.info ("Connection {} closed by client".format(self.websocket.remote_address))
-        debug_websocket(self.websocket)
+        #debug_websocket(self.websocket)
         self.alive = False
 
     def handle_message(self, message):
