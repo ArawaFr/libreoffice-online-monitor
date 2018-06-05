@@ -5,7 +5,7 @@ import websockets, socket
 import logging
 import os, signal
 
-logger = logging.getLogger('loolmonitor')
+logger = logging.getLogger(__name__)
 
 
 def debug_websocket(websocket):
@@ -29,7 +29,7 @@ class GenericHandler():
 
         logger.info ("New Worker {} Connected".format(websocket.remote_address))
         #debug_websocket(websocket)
-        logger.debug ("Path: {}".format(path))
+        logger.debug ("$ Path: {}".format(path))
 
     async def run(self):
         """
@@ -38,16 +38,20 @@ class GenericHandler():
         """
         while self.alive:
             try:
+                logger.debug ("$ waiting for message")
                 message = await asyncio.wait_for(self.websocket.recv(), timeout=20)
                 #debug_websocket(self.websocket)
+                logger.debug ("$ handle message")
             except websockets.exceptions.ConnectionClosed:
+                logger.debug ("$ exceptions.ConnectionClosed : close")
                 self.close()
             except asyncio.TimeoutError:
                 # No data in 20 seconds, check the connection.
+                logger.debug ("$ asyncio.TimeoutError : ping pong")
                 await self.pong_waiter()
             else:
-                self.handle_message(message)
-                await self.websocket.send(message)
+                logger.debug ("$ else angel")
+
 
     def close(self):
         logger.info ("Connection {} closed by client".format(self.websocket.remote_address))
@@ -59,6 +63,7 @@ class GenericHandler():
         You want to override this method.
         self.alive=False to end current session
         """
+        logger.info ("Handle Message {}".format(message))
         print(message)
 
     async def pong_waiter(self):
