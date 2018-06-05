@@ -126,7 +126,7 @@ class LoolMonitor():
 
     def start(self):
         start_server = websockets.serve(self.handler, self.__host, self.__port,
-                        family=socket.AF_INET)
+                        family=socket.AF_INET, ssl=None)
 
         logger.info ("listing on 'ws://{}:{}'".format(self.__host, self.__port))
         logger.info ("Event loop running forever, press Ctrl+C to interrupt.")
