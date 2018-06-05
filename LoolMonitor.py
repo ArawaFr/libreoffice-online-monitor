@@ -8,74 +8,6 @@ import os, signal
 logger = logging.getLogger(__name__)
 
 
-class GenericHandler():
-    """
-    Instanciate for each websocket session.
-    You probably want to override handle_message function.
-    """
-
-    def __init__(self, websocket, path):
-        self.websocket = websocket
-        self.path = path
-        self.alive = True
-
-        logger.info ("New Worker {} Connected".format(websocket.remote_address))
-        logger.debug ("$ Path: {}".format(path))
-
-    async def wsSend(self, msg):
-        logger.info ("Send Message {}".format(msg))
-        await self.websocket.send(msg)
-
-    async def run(self):
-        """
-        Infite loop that call handle_message for each received message.
-        Prevent deconnection by sedding ping query every 20s
-        """
-        await self.wsSend("documents")
-
-        while self.alive:
-            try:
-                logger.debug ("$ waiting for message")
-                message = await asyncio.wait_for(self.websocket.recv(), timeout=20)
-
-                logger.debug ("$ handle message")
-                rsp = self.handle_message(message)
-                if rsp:
-                    await self.wsSend(rsp)
-
-            except websockets.exceptions.ConnectionClosed:
-                logger.debug ("$ exceptions.ConnectionClosed : close")
-                self.close()
-            except asyncio.TimeoutError:
-                # No data in 20 seconds, check the connection.
-                logger.debug ("$ asyncio.TimeoutError : ping pong")
-                await self.pong_waiter()
-            else:
-                logger.debug ("$ else angel")
-
-
-    def close(self):
-        logger.info ("Connection {} closed by client".format(self.websocket.remote_address))
-        self.alive = False
-
-    def handle_message(self, message):
-        """
-        You want to override this method.
-        self.alive=False to end current session
-        """
-        logger.info ("Handle Message {}".format(message))
-        print(message)
-        return message
-
-    async def pong_waiter(self):
-        """Send ping query. Close session if Timeout"""
-        try:
-            pong_waiter = await self.websocket.ping()
-            await asyncio.wait_for(pong_waiter, timeout=10)
-        except asyncio.TimeoutError:
-            # No response to ping in 10 seconds, disconnect.
-            self.alive = False
-
 class LoolMonitor():
     """
     Create websocket server
@@ -86,7 +18,6 @@ class LoolMonitor():
         self.__host = host
         self.__port = port
         self.connected = set()
-
 
     async def consumer_handler(self, websocket, path):
         while True:
