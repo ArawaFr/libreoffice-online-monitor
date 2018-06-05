@@ -31,17 +31,28 @@ class GenericHandler():
         #debug_websocket(websocket)
         logger.debug ("$ Path: {}".format(path))
 
+    async def wsSend(self, msg):
+        logger.info ("Send Message {}".format(msg))
+        await self.websocket.send(msg)
+
     async def run(self):
         """
         Infite loop that call handle_message for each received message.
         Prevent deconnection by sedding ping query every 20s
         """
+        await self.wsSend("documents")
+
         while self.alive:
             try:
                 logger.debug ("$ waiting for message")
                 message = await asyncio.wait_for(self.websocket.recv(), timeout=20)
                 #debug_websocket(self.websocket)
+
                 logger.debug ("$ handle message")
+                rsp = self.handle_message(message)
+                if rsp:
+                    await self.wsSend(rsp)
+
             except websockets.exceptions.ConnectionClosed:
                 logger.debug ("$ exceptions.ConnectionClosed : close")
                 self.close()
@@ -65,6 +76,7 @@ class GenericHandler():
         """
         logger.info ("Handle Message {}".format(message))
         print(message)
+        return message
 
     async def pong_waiter(self):
         """Send ping query. Close session if Timeout"""
@@ -74,6 +86,19 @@ class GenericHandler():
         except asyncio.TimeoutError:
             # No response to ping in 10 seconds, disconnect.
             self.alive = False
+
+class LoolAdminHandler(GenericHandler):
+    """
+    Handler that subscribe and get stats from lool
+    """
+    def handle_message(self, message):
+        """
+        You want to override this method.
+        self.alive=False to end current session
+        """
+        logger.info ("ADM: Handle Message {}".format(message))
+        print(message)
+        return "documents"
 
 class LoolMonitor():
     """
