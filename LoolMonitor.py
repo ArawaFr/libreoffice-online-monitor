@@ -109,10 +109,45 @@ class LoolMonitor():
         self.__loop = None
         self.__host = host
         self.__port = port
+        self.connected = set()
+
+
+    async def consumer_handler(self, websocket, path):
+        while True:
+            logger.debug ("$ waiting for message")
+            message = await websocket.recv()
+            await self.consumer(message)
+
+    async def consumer(self, message):
+        logger.info (":: Handle Message {}".format(message))
+
+    async def producer_handler(self, websocket, path):
+        while True:
+            message = await self.producer()
+            logger.info (":: Send Message {} -- {}".format(message, type(message)))
+            await asyncio.wait([ws.send(message) for ws in self.connected])
+
+    async def producer(self):
+        logger.debug ("$ waiting for produce")
+        await asyncio.sleep(10)
+        logger.debug ("$ waiting for produce ... send mem_stats")
+        return str("total_avail_mem")
 
     async def handler(self, websocket, path):
-        handler = GenericHandler(websocket, path)
-        await handler.run()
+        #handler = LoolAdminHandler(websocket, path)
+        #await handler.run()
+        self.connected.add(websocket)
+        try:
+            consumer_task = asyncio.ensure_future(self.consumer_handler(websocket, path))
+            producer_task = asyncio.ensure_future(self.producer_handler(websocket, path))
+            done, pending = await asyncio.wait([consumer_task, producer_task],
+                return_when=asyncio.FIRST_COMPLETED, )
+
+            for task in pending:
+                task.cancel()
+
+        finally:
+            self.connected.remove(websocket)
 
     def ask_exit(self, signame):
         logger.info ("got signal %s: exit" % signame)
