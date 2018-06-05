@@ -7,15 +7,6 @@ import os, signal
 
 logger = logging.getLogger(__name__)
 
-
-def debug_websocket(websocket):
-    logger.debug ("| -- Web Socket Message -- |")
-    logger.debug ("| request_headers: {}".format(websocket.request_headers))
-    logger.debug ("| response_headers: {}".format(websocket.response_headers))
-    logger.debug ("| local_address: {}".format(websocket.local_address))
-    logger.debug ("| remote_address: {}".format(websocket.remote_address))
-    logger.debug ("| ------------------------ |")
-
 class GenericHandler():
     """
     Instanciate for each websocket session.
@@ -28,7 +19,6 @@ class GenericHandler():
         self.alive = True
 
         logger.info ("New Worker {} Connected".format(websocket.remote_address))
-        #debug_websocket(websocket)
         logger.debug ("$ Path: {}".format(path))
 
     async def wsSend(self, msg):
@@ -46,7 +36,6 @@ class GenericHandler():
             try:
                 logger.debug ("$ waiting for message")
                 message = await asyncio.wait_for(self.websocket.recv(), timeout=20)
-                #debug_websocket(self.websocket)
 
                 logger.debug ("$ handle message")
                 rsp = self.handle_message(message)
@@ -66,7 +55,6 @@ class GenericHandler():
 
     def close(self):
         logger.info ("Connection {} closed by client".format(self.websocket.remote_address))
-        #debug_websocket(self.websocket)
         self.alive = False
 
     def handle_message(self, message):
