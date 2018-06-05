@@ -7,6 +7,7 @@ import os, signal
 
 logger = logging.getLogger(__name__)
 
+
 class GenericHandler():
     """
     Instanciate for each websocket session.
@@ -75,19 +76,6 @@ class GenericHandler():
             # No response to ping in 10 seconds, disconnect.
             self.alive = False
 
-class LoolAdminHandler(GenericHandler):
-    """
-    Handler that subscribe and get stats from lool
-    """
-    def handle_message(self, message):
-        """
-        You want to override this method.
-        self.alive=False to end current session
-        """
-        logger.info ("ADM: Handle Message {}".format(message))
-        print(message)
-        return "documents"
-
 class LoolMonitor():
     """
     Create websocket server
@@ -122,8 +110,6 @@ class LoolMonitor():
         return str("total_avail_mem")
 
     async def handler(self, websocket, path):
-        #handler = LoolAdminHandler(websocket, path)
-        #await handler.run()
         self.connected.add(websocket)
         try:
             consumer_task = asyncio.ensure_future(self.consumer_handler(websocket, path))
