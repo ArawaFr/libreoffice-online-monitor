@@ -20,11 +20,17 @@ STATS_CMD = [
              "recv_bytes",
             ]
 
+# Query Stats every 10s
+DOCS_EVERY = 10
+
 class LoolMonitor():
     """
     Create websocket server
     Catch SIGINT and SIGTERM to stop the server
     """
+
+    docs = {}
+
     def __init__(self, host=None, port=8765):
         self.__loop = None
         self.__host = host
@@ -44,6 +50,9 @@ class LoolMonitor():
             k = "%s:%d/%s" % sum((remote_address, (cmd,)), ())
             self.stats[k] = msg[2]
 
+        elif cmd == "documents":
+            data = json.loads(msg[2])
+            docs = data["documents"]
         elif cmd == "loolserver":
             data = json.loads(msg[2])
             logger.info (":: Lool Server Version :: {}".format(data))
@@ -55,9 +64,13 @@ class LoolMonitor():
         else:
             logger.info (":: Unknow Message :: {}".format(cmd))
 
+
     async def producer_handler(self, websocket, path):
         await asyncio.wait([ws.send("version") for ws in self.connected])
         while True:
+            await asyncio.wait([ws.send("documents") for ws in self.connected])
+            await asyncio.sleep(DOCS_EVERY)
+
 
     async def handler(self, websocket, path):
         self.connected.add(websocket)
