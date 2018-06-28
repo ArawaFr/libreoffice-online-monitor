@@ -4,9 +4,21 @@ import asyncio, functools
 import websockets, socket
 import logging
 import os, signal
+import json
 
 logger = logging.getLogger(__name__)
 
+STATS_CMD = [
+             "active_users_count",
+             "active_docs_count",
+             "mem_stats",
+             "cpu_stats",
+             "sent_activity",
+             "mem_consumed",
+             "total_avail_mem",
+             "sent_bytes",
+             "recv_bytes",
+            ]
 
 class LoolMonitor():
     """
@@ -21,24 +33,31 @@ class LoolMonitor():
 
     async def consumer_handler(self, websocket, path):
         while True:
-            logger.debug ("$ waiting for message")
             message = await websocket.recv()
-            await self.consumer(message)
+            logger.debug (":: Handle Message {} - ws={}".format(message, websocket.remote_address))
+            await self.consumer(websocket.remote_address, message)
 
-    async def consumer(self, message):
-        logger.info (":: Handle Message {}".format(message))
+    async def consumer(self, remote_address, message):
+        msg = message.partition(" ")
+        cmd = msg[0]
+        if cmd in STATS_CMD:
+            k = "%s:%d/%s" % sum((remote_address, (cmd,)), ())
+            self.stats[k] = msg[2]
+
+        elif cmd == "loolserver":
+            data = json.loads(msg[2])
+            logger.info (":: Lool Server Version :: {}".format(data))
+
+        elif cmd == "lokitversion":
+            data = json.loads(msg[2])
+            logger.info (":: Lokit Version :: {}".format(data))
+
+        else:
+            logger.info (":: Unknow Message :: {}".format(cmd))
 
     async def producer_handler(self, websocket, path):
+        await asyncio.wait([ws.send("version") for ws in self.connected])
         while True:
-            message = await self.producer()
-            logger.info (":: Send Message {} -- {}".format(message, type(message)))
-            await asyncio.wait([ws.send(message) for ws in self.connected])
-
-    async def producer(self):
-        logger.debug ("$ waiting for produce")
-        await asyncio.sleep(10)
-        logger.debug ("$ waiting for produce ... send mem_stats")
-        return str("total_avail_mem")
 
     async def handler(self, websocket, path):
         self.connected.add(websocket)
