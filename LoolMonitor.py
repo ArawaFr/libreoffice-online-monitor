@@ -39,6 +39,7 @@ class LoolMonitor():
         self.__host = host
         self.__port = port
         self.connected = set()
+        self.work_handler = []
 
     async def consumer_handler(self, websocket, path):
         while True:
@@ -60,6 +61,8 @@ class LoolMonitor():
             try:
                 while True:
                     adoc_pid = adddoc.get_nowait()
+                    if adoc_pid is None:
+                        continue
                     for doc in docs:
                         k = self.getKey(websocket, doc["pid"])
                         if k == adoc_pid:
@@ -67,6 +70,7 @@ class LoolMonitor():
                             activ_docs[k] = doc
                             adoc_pid = None
                             break
+                    adddoc.task_done()
                     if adoc_pid is not None:
                         logger.error (":: FAIL ADD DOC, {} not in documents".format(adoc_pid))
             except queue.Empty:
@@ -125,13 +129,19 @@ class LoolMonitor():
             self.connected.remove(websocket)
 
     def adddoc(self, docKey):
-        logger.info ("+++ ADD DOC ++ {}".format(docKey))
+        for h in self.work_handler:
+            logger.info ("Handler %s: adddoc" % h.NAME)
+            h.adddoc(docKey)
 
     def rmdoc(self, docKey):
-        logger.info ("+++ RM  DOC ++ {}".format(docKey))
+        for h in self.work_handler:
+            logger.debug ("Handler %s: rmdoc" % h.NAME)
+            h.rmdoc(docKey)
 
     def ask_exit(self, signame):
         logger.info ("got signal %s: exit" % signame)
+        for h in self.work_handler:
+            h.stop()
         self.__loop.stop()
 
     def __init_event_loop(self):
