@@ -1,6 +1,7 @@
 import logging
 from multiprocessing import Process
 from LoolMonitor import LoolMonitor
+from CmisHandler import CmisHandler
 
 
 ch = logging.StreamHandler()
@@ -16,6 +17,9 @@ logger.addHandler(ch)
 
 def start_monitor(host=None, port=8765):
     monitor = LoolMonitor(host, port)
+    cmisHandler = CmisHandler()
+    cmisHandler.start()
+    monitor.work_handler.append(cmisHandler)
     monitor.start()
 
 if __name__ == '__main__':
