@@ -3,7 +3,7 @@
 import asyncio, functools
 import websockets, socket
 import logging
-import os, signal
+import os, signal, queue
 import json
 
 logger = logging.getLogger(__name__)
@@ -23,13 +23,16 @@ STATS_CMD = [
 # Query Stats every 10s
 DOCS_EVERY = 10
 
+
+activ_docs = {}
+adddoc = queue.Queue()
+rmdoc = queue.Queue()
+
 class LoolMonitor():
     """
     Create websocket server
     Catch SIGINT and SIGTERM to stop the server
     """
-
-    docs = {}
 
     def __init__(self, host=None, port=8765):
         self.__loop = None
@@ -41,9 +44,9 @@ class LoolMonitor():
         while True:
             message = await websocket.recv()
             logger.debug (":: Handle Message {} - ws={}".format(message, websocket.remote_address))
-            await self.consumer(websocket.remote_address, message)
+            await self.consumer(websocket, message)
 
-    async def consumer(self, remote_address, message):
+    async def consumer(self, websocket, message):
         msg = message.partition(" ")
         cmd = msg[0]
         if cmd in STATS_CMD:
@@ -53,6 +56,35 @@ class LoolMonitor():
         elif cmd == "documents":
             data = json.loads(msg[2])
             docs = data["documents"]
+
+            try:
+                while True:
+                    adoc_pid = adddoc.get_nowait()
+                    for doc in docs:
+                        k = self.getKey(websocket, doc["pid"])
+                        if k == adoc_pid:
+                            self.adddoc(doc["docKey"])
+                            activ_docs[k] = doc
+                            adoc_pid = None
+                            break
+                    if adoc_pid is not None:
+                        logger.error (":: FAIL ADD DOC, {} not in documents".format(adoc_pid))
+            except queue.Empty:
+                pass
+
+        elif cmd == "adddoc":
+            data = msg[2].split(" ")
+            pid = data[0]
+            adddoc.put(self.getKey(websocket, pid))
+
+        elif cmd == "rmdoc":
+            data = msg[2].split(" ")
+            pid = data[0]
+            k = self.getKey(websocket, pid)
+            doc = activ_docs[k]
+            self.rmdoc(doc["docKey"])
+            del activ_docs[k]
+
         elif cmd == "loolserver":
             data = json.loads(msg[2])
             logger.info (":: Lool Server Version :: {}".format(data))
@@ -64,9 +96,14 @@ class LoolMonitor():
         else:
             logger.info (":: Unknow Message :: {}".format(cmd))
 
+    def getKey(self, websocket, pid):
+        return "%s:%d/%s" % sum((websocket.remote_address, (pid,)), ())
 
     async def producer_handler(self, websocket, path):
         await asyncio.wait([ws.send("version") for ws in self.connected])
+        # registre pub-sub
+        await asyncio.wait([ws.send("subscribe adddoc rmdoc resetidle propchange modifications") for ws in self.connected])
+        await asyncio.sleep(1)
         while True:
             await asyncio.wait([ws.send("documents") for ws in self.connected])
             await asyncio.sleep(DOCS_EVERY)
@@ -85,6 +122,12 @@ class LoolMonitor():
 
         finally:
             self.connected.remove(websocket)
+
+    def adddoc(self, docKey):
+        logger.info ("+++ ADD DOC ++ {}".format(docKey))
+
+    def rmdoc(self, docKey):
+        logger.info ("+++ RM  DOC ++ {}".format(docKey))
 
     def ask_exit(self, signame):
         logger.info ("got signal %s: exit" % signame)
