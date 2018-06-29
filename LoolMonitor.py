@@ -102,8 +102,9 @@ class LoolMonitor():
     async def producer_handler(self, websocket, path):
         await asyncio.wait([ws.send("version") for ws in self.connected])
         # registre pub-sub
-        await asyncio.wait([ws.send("subscribe adddoc rmdoc resetidle propchange modifications") for ws in self.connected])
+        await asyncio.wait([ws.send("subscribe adddoc rmdoc resetidle modifications") for ws in self.connected])
         await asyncio.sleep(1)
+
         while True:
             await asyncio.wait([ws.send("documents") for ws in self.connected])
             await asyncio.sleep(DOCS_EVERY)
