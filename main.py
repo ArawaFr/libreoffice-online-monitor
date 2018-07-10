@@ -1,7 +1,7 @@
 import logging
 from multiprocessing import Process
 from LoolMonitor import LoolMonitor
-from CmisHandler import CmisHandler
+from AlfrescoHandler import AlfrescoHandler
 
 
 ch = logging.StreamHandler()
@@ -17,9 +17,9 @@ logger.addHandler(ch)
 
 def start_monitor(host=None, port=8765):
     monitor = LoolMonitor(host, port)
-    cmisHandler = CmisHandler()
-    cmisHandler.start()
-    monitor.work_handler.append(cmisHandler)
+    alfHandler = AlfrescoHandler(usr, pwd, "alfresco:8080", ssl=False)
+    alfHandler.start()
+    monitor.work_handler.append(alfHandler)
     monitor.start()
 
 if __name__ == '__main__':

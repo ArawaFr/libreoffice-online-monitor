@@ -80,14 +80,21 @@ class LoolMonitor():
             data = msg[2].split(" ")
             pid = data[0]
             adddoc.put(self.getKey(websocket, pid))
+            await websocket.send("documents")
 
         elif cmd == "rmdoc":
             data = msg[2].split(" ")
             pid = data[0]
             k = self.getKey(websocket, pid)
-            doc = activ_docs[k]
-            self.rmdoc(doc["docKey"])
-            del activ_docs[k]
+            try:
+                doc = activ_docs[k]
+                logger.debug (":: Treat Rm Doc {} = {}".format(k, doc["docKey"]))
+                self.rmdoc(doc["docKey"])
+                del activ_docs[k]
+            except KeyError:
+                # Not in activ_docs
+                # Todo : query documents ?
+                pass
 
         elif cmd == "loolserver":
             data = json.loads(msg[2])
