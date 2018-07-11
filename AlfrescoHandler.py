@@ -3,8 +3,8 @@ import os
 import logging
 from multiprocessing import Process, Queue
 import queue
-import re, json, urllib
-import http.client
+import re, urllib, requests, json
+
 
 logger = logging.getLogger(__name__)
 
@@ -18,35 +18,37 @@ class AlfrescoHandler(Process):
     Handler that call Alfresco Server
     """
 
-    def __init__(self, user, pwd, wsUrl="localhost:8080", ssl=True):
+    def __init__(self, user, pwd, alf_ws="http://localhost:8080/alfresco/s/"):
         super(AlfrescoHandler, self).__init__()
-        if ssl:
-            self.conn = http.client.HTTPSConnection(wsUrl)
+        self.alf_ws = alf_ws if alf_ws[-1] != '/' else alf_ws[:-1]
+        self.__user = user
+        self.__pwd = pwd
+        self.__ticket = None
+
+    def ticket(self):
+        if self.__ticket:
+            query = "{}/api/login/ticket/{}".format(self.alf_ws, self.__ticket)
+            logger.debug ("alfresco_handler : query={}".format(query))
+            r = requests.get(query,
+                params = {'alf_ticket': self.__ticket}
+            )
+            if r.ok:
+                logger.debug ("alfresco_handler : ticket ok !")
+                return
+
+        query = "{}/api/login.json".format(self.alf_ws)
+        logger.debug ("alfresco_handler : query={}".format(query))
+        r_login = requests.get(query,
+            params = {'u': self.__user, 'pw': self.__pwd}
+        )
+        logger.debug ("alfresco_handler : {}".format(r_login))
+
+        if r_login.ok:
+            data = r_login.json()
+            logger.debug ("alfresco_handler : {}".format(data['data']))
+            self.__ticket = data['data']['ticket']
         else:
-            self.conn = http.client.HTTPConnection(wsUrl)
-
-
-        self.conn.request("GET","/alfresco/s/api/login.json?u={}&pw={}".format(user, pwd))
-        r_login = self.conn.getresponse()
-        data = json.loads(r_login.read())
-        logger.debug ("+++alfHandler+++ {}".format(data['data']))
-        self.ticket = data['data']['ticket']
-        self.conn.close()
-
-
-        #params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
-        self.conn.request("GET", "/alfresco/s/api/people/admin/preferences?alf_ticket={}".format(self.ticket))
-        r_pref = self.conn.getresponse()
-        logger.debug ("+++alfHandler+++ {}".format(r_pref.read()))
-        self.conn.close()
-
-        # test a8290263-4178-48f5-a0b0-be155a424828
-        uuid = extractUuid("/alfresco/s/wopi/files/a8290263-4178-48f5-a0b0-be155a424828")
-        logger.info ("+++alfHandler+++ ADD DOC {}".format(uuid))
-        aspects = self.get_aspect(uuid)
-        if not ASPECT_LOOL in aspects:
-            self.add_aspect(uuid, ASPECT_LOOL)
-
+            raise HttpError(r_login)
 
     def adddoc(self, docKey):
         tasks.put(AddDocTask(docKey))
@@ -56,7 +58,7 @@ class AlfrescoHandler(Process):
 
     def run(self):
         while True:
-            logger.debug ("+++alfHandler+++ {} Wait for task".format(os.getpid()))
+            logger.debug ("alfresco_handler {} Wait for task".format(os.getpid()))
             task = tasks.get()
             if task is None:
                 break
@@ -65,50 +67,43 @@ class AlfrescoHandler(Process):
     def stop(self):
         tasks.put(None)
 
-    def get_aspect(self, uuid):
-        # https://my-alfresco.jeci.fr/share/proxy/alfresco/slingshot/doclib/aspects/node/workspace/SpacesStore/a8290263-4178-48f5-a0b0-be155a424828
-        try:
-            query = "/alfresco/s/slingshot/doclib/aspects/node/workspace/SpacesStore/{}?alf_ticket={}".format(uuid, self.ticket)
-            self.conn.request("GET", query)
 
-            logger.debug ("+++alfHandler+++ query {}".format(query))
-            r_aspects = self.conn.getresponse()
-            j_aspects = json.loads(r_aspects.read())
-            return j_aspects['current']
-        finally:
-            self.conn.close()
+    def get_aspect(self, uuid):
+        logger.debug ("alfresco_handler->get_aspect")
+        self.ticket()
+        r_aspects = requests.get(
+            "{}/slingshot/doclib/aspects/node/workspace/SpacesStore/{}".format(self.alf_ws, uuid),
+            params = { 'alf_ticket': self.__ticket }
+        )
+        logger.debug ("alfresco_handler response {}".format(r_aspects.text))
+        j_aspects = r_aspects.json()
+        return j_aspects['current']
 
     def add_aspect(self, uuid, aspect):
-        try:
-            #
-            query = "/alfresco/s/slingshot/doclib/action/aspects/node/workspace/SpacesStore/{}?alf_ticket={}".format(uuid, self.ticket)
-            body = json.dumps({"added" : [ aspect ], "removed" : []})
-            logger.debug ("+++alfHandler+++ query {} + {}".format(query, body))
+        logger.debug ("alfresco_handler->add_aspect")
+        self.ticket()
+        r_payload = requests.post(
+            "{}/slingshot/doclib/action/aspects/node/workspace/SpacesStore/{}".format(self.alf_ws, uuid),
+            params = { 'alf_ticket': self.__ticket },
             headers = { "Content-type": "application/json",
-                        "X-Requested-With": "application/x-www-form-urlencoded"}
-
-            self.conn.request("POST", query, body, headers)
-
-            r_payload = self.conn.getresponse()
-            logger.debug ("+++alfHandler+++ response {}".format(r_payload.read()))
-            return r_payload
-        finally:
-            self.conn.close()
+                        "X-Requested-With": "application/x-www-form-urlencoded"},
+            data = json.dumps({"added" : [ aspect ], "removed" : []})
+        )
+        logger.debug ("alfresco_handler response {}".format(r_payload.text))
+        return r_payload.ok
 
     def rm_aspect(self, uuid, aspect):
-        try:
-            query = "/alfresco/s/slingshot/doclib/action/aspects/node/workspace/SpacesStore/{}?alf_ticket={}".format(uuid, self.ticket)
-            body = json.dumps({"added" : [], "removed" : [ aspect ]})
-            logger.debug ("+++alfHandler+++ query {} + {}".format(query, body))
+        logger.debug ("alfresco_handler->rm_aspect")
+        self.ticket()
+        r_payload = requests.post(
+            "{}/slingshot/doclib/action/aspects/node/workspace/SpacesStore/{}".format(self.alf_ws, uuid),
+            params = { 'alf_ticket': self.__ticket },
             headers = { "Content-type": "application/json",
-                        "X-Requested-With": "application/x-www-form-urlencoded"}
-            self.conn.request("POST", query, body, headers)
-            r_payload = self.conn.getresponse()
-            logger.debug ("+++alfHandler+++ response {}".format(r_payload.read()))
-            return r_payload
-        finally:
-            self.conn.close()
-
+                        "X-Requested-With": "application/x-www-form-urlencoded"},
+            data = json.dumps({"added" : [], "removed" : [ aspect ]})
+        )
+        logger.debug ("alfresco_handler response {}".format(r_payload.text))
+        return r_payload.ok
 
 class AddDocTask():
     def __init__(self, docKey=None):
@@ -116,7 +111,7 @@ class AddDocTask():
 
     def do_work(self, alfHandler):
         uuid = extractUuid(self.docKey)
-        logger.info ("+++alfHandler+++ ADD DOC {}".format(uuid))
+        logger.info ("alfresco_handler ADD DOC {}".format(uuid))
         aspects = alfHandler.get_aspect(uuid)
         if not ASPECT_LOOL in aspects:
             alfHandler.add_aspect(uuid, ASPECT_LOOL)
@@ -128,7 +123,7 @@ class RmDocTask():
 
     def do_work(self, alfHandler):
         uuid = extractUuid(self.docKey)
-        logger.info ("+++alfHandler+++ RM DOC {}".format(uuid))
+        logger.info ("alfresco_handler RM DOC {}".format(uuid))
         aspects = alfHandler.get_aspect(uuid)
         if ASPECT_LOOL in aspects:
             alfHandler.rm_aspect(uuid, ASPECT_LOOL)
@@ -143,3 +138,9 @@ def extractUuid(docKey):
         return matches.group()
     else:
         return None
+
+class HttpError(Exception):
+    """Base class for exceptions in this module."""
+
+    def __init__(self, r):
+        self.response = r

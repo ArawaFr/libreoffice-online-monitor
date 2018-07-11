@@ -1,6 +1,5 @@
 ALFRESCO_CONFIG = {
     'user' : 'admin',
     'password' : 'admin',
-    'host' : 'localhost:8080',
-    'ssl' : False
+    'webscript' : 'http://alfresco:8080/alfresco/s/'
 }

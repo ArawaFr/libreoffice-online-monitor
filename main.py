@@ -22,8 +22,7 @@ def start_monitor(host=None, port=8765):
     alfHandler = AlfrescoHandler(
                     config.ALFRESCO_CONFIG['user'],
                     config.ALFRESCO_CONFIG['password'],
-                    config.ALFRESCO_CONFIG['host'],
-                    ssl=config.ALFRESCO_CONFIG['ssl']
+                    config.ALFRESCO_CONFIG['webscript']
     )
     alfHandler.start()
     monitor.work_handler.append(alfHandler)
