@@ -103,6 +103,10 @@ class LoolMonitor():
             data = json.loads(msg[2])
             logger.info (":: Lokit Version :: {}".format(data))
 
+        elif cmd == "History":
+            data = json.loads(msg[2])
+            logger.info (":: History :: {}".format(data))
+
         else:
             logger.info (":: Unknow Message :: {}".format(cmd))
 
