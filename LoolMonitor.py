@@ -44,7 +44,6 @@ class LoolMonitor():
     async def consumer_handler(self, websocket, path):
         while True:
             message = await websocket.recv()
-            logger.debug (":: Handle Message {} - ws={}".format(message, websocket.remote_address))
             await self.consumer(websocket, message)
 
     async def consumer(self, websocket, message):
@@ -137,12 +136,10 @@ class LoolMonitor():
 
     def adddoc(self, docKey):
         for h in self.work_handler:
-            logger.info ("Handler %s: adddoc" % h.NAME)
             h.adddoc(docKey)
 
     def rmdoc(self, docKey):
         for h in self.work_handler:
-            logger.debug ("Handler %s: rmdoc" % h.NAME)
             h.rmdoc(docKey)
 
     def ask_exit(self, signame):
