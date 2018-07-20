@@ -83,11 +83,10 @@ class AlfrescoHandler(Process):
         logger.debug ("alfresco_handler->add_aspect")
         self.ticket()
         r_payload = requests.post(
-            "{}/slingshot/doclib/action/aspects/node/workspace/SpacesStore/{}".format(self.alf_ws, uuid),
+            "{}/lool/aspect/add/workspace/SpacesStore/{}".format(self.alf_ws, uuid),
             params = { 'alf_ticket': self.__ticket },
             headers = { "Content-type": "application/json",
-                        "X-Requested-With": "application/x-www-form-urlencoded"},
-            data = json.dumps({"added" : [ aspect ], "removed" : []})
+                        "X-Requested-With": "application/x-www-form-urlencoded"}
         )
         logger.debug ("alfresco_handler response {}".format(r_payload.text))
         return r_payload.ok
@@ -96,11 +95,10 @@ class AlfrescoHandler(Process):
         logger.debug ("alfresco_handler->rm_aspect")
         self.ticket()
         r_payload = requests.post(
-            "{}/slingshot/doclib/action/aspects/node/workspace/SpacesStore/{}".format(self.alf_ws, uuid),
+            "{}/lool/aspect/rem/workspace/SpacesStore/{}".format(self.alf_ws, uuid),
             params = { 'alf_ticket': self.__ticket },
             headers = { "Content-type": "application/json",
-                        "X-Requested-With": "application/x-www-form-urlencoded"},
-            data = json.dumps({"added" : [], "removed" : [ aspect ]})
+                        "X-Requested-With": "application/x-www-form-urlencoded"}
         )
         logger.debug ("alfresco_handler response {}".format(r_payload.text))
         return r_payload.ok
