@@ -7,15 +7,22 @@ from AlfrescoHandler import AlfrescoHandler
 
 
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+#FORMAT = '%(asctime)-15s %(message)s'
+#logging.basicConfig(format=FORMAT)
+ch.setLevel(logging.DEBUG)
 
 logger = logging.getLogger('websockets')
+logger.setLevel(logging.WARN)
+logger.addHandler(ch)
+
+logger = logging.getLogger('LoolMonitor')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 
-logger = logging.getLogger('loolmonitor')
-logger.setLevel(logging.INFO)
+logger = logging.getLogger('AlfrescoHandler')
+logger.setLevel(logging.DEBUG)
 logger.addHandler(ch)
+
 
 def start_monitor(host=None, port=8765):
     monitor = LoolMonitor(host, port)

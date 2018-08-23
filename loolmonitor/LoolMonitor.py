@@ -118,6 +118,8 @@ class LoolMonitor():
         # registre pub-sub
         await asyncio.wait([ws.send("subscribe adddoc rmdoc resetidle modifications") for ws in self.connected])
         await asyncio.sleep(1)
+        #await asyncio.wait([ws.send("subscribe mem_stats cpu_stats sent_activity recv_activity propchange settings") for ws in self.connected])
+        #await asyncio.sleep(1)
 
         while True:
             await asyncio.wait([ws.send("documents") for ws in self.connected])
