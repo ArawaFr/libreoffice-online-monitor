@@ -1,5 +1,5 @@
 import logging
-import config
+from .options import configs
 
 from multiprocessing import Process
 from .LoolMonitor import LoolMonitor
@@ -27,9 +27,9 @@ logger.addHandler(ch)
 def start_monitor(host=None, port=8765):
     monitor = LoolMonitor(host, port)
     alfHandler = AlfrescoHandler(
-                    config.ALFRESCO_CONFIG['user'],
-                    config.ALFRESCO_CONFIG['password'],
-                    config.ALFRESCO_CONFIG['webscript']
+                    configs['user'],
+                    configs['password'],
+                    configs['webscript']
     )
     alfHandler.start()
     monitor.work_handler.append(alfHandler)

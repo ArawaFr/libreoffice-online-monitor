@@ -24,6 +24,7 @@ class AlfrescoHandler(Process):
         self.__user = user
         self.__pwd = pwd
         self.__ticket = None
+        print ("Alfresco Handler connect to {}@{}".format(self.__user, self.alf_ws))
 
     def ticket(self):
         if self.__ticket:
