@@ -7,8 +7,8 @@ from .AlfrescoHandler import AlfrescoHandler
 
 
 ch = logging.StreamHandler()
-#FORMAT = '%(asctime)-15s %(message)s'
-#logging.basicConfig(format=FORMAT)
+# FORMAT = '%(asctime)-15s %(message)s'
+# logging.basicConfig(format=FORMAT)
 ch.setLevel(logging.DEBUG)
 
 logger = logging.getLogger('websockets')
@@ -35,6 +35,7 @@ def start_monitor(host=None, port=8765):
     monitor.work_handler.append(alfHandler)
     monitor.start()
 
+
 if __name__ == '__main__':
     Process(target=start_monitor).start()
-    logger.info ("Monitor is started")
+    logger.info("Monitor is started")
