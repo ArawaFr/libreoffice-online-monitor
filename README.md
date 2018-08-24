@@ -1,13 +1,20 @@
 # LoolMonitor
 
-Web-socket serveur lesting to Lool Admin Worker.
+Web-socket serveur listening for Lool Admin Worker.
 
-Need python>3.6
+Works with Alfresco ( [libreoffice-online-repo](https://github.com/ArawaFr/libreoffice-online-repo) & [libreoffice-online-share](https://github.com/ArawaFr/libreoffice-online-share) )
+
+## Requirements
+
+* Need python>3.6
 
 ## Install
 
 ```bash
-pip install --no-cache-dir -r requirements.txt
+
+apt install git python3-pip
+pip3 install git+https://github.com/ArawaFr/libreoffice-online-monitor.git@clean-project
+python3 -m loolmonitor
 ```
 
 ## Run
@@ -16,16 +23,7 @@ pip install --no-cache-dir -r requirements.txt
 python main.py
 ```
 
-## With docker
 
-### Build
+# Configuration
 
-```bash
-docker build -t jeci/ws-ping .
-```
-
-### Run
-
-```bash
-docker run --rm --net host -it --cap-add NET_BIND_SERVICE jeci/ws-ping
-```
+You can configure the monitor by placing any supported command line option to a configuration file. The system wide configuration file is located at `/etc/lool/monitor.conf` and the user wide configuration file at `~/.config/lool/monitor.conf`
