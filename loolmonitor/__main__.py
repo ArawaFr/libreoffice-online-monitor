@@ -2,8 +2,8 @@ import logging
 import config
 
 from multiprocessing import Process
-from LoolMonitor import LoolMonitor
-from AlfrescoHandler import AlfrescoHandler
+from .LoolMonitor import LoolMonitor
+from .AlfrescoHandler import AlfrescoHandler
 
 
 ch = logging.StreamHandler()
