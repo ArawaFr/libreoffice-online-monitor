@@ -1,7 +1,7 @@
 import logging
-from .options import configs
-
 from multiprocessing import Process
+
+from .options import configs
 from .LoolMonitor import LoolMonitor
 from .AlfrescoHandler import AlfrescoHandler
 
