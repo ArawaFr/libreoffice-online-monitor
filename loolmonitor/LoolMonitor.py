@@ -59,10 +59,12 @@ class LoolMonitor():
         if cmd in STATS_CMD:
             k = "%s:%d/%s" % sum((websocket.remote_address, (cmd,)), ())
             self.stats[k] = msg[2]
+            logger.debug(":: stats :: {}".format(msg[2]))
 
         elif cmd == "documents":
             data = json.loads(msg[2])
             docs = data["documents"]
+            logger.debug(":: documents :: {}".format(docs))
 
             try:
                 while True:
@@ -87,12 +89,14 @@ class LoolMonitor():
         elif cmd == "adddoc":
             data = msg[2].split(" ")
             pid = data[0]
+            logger.debug(":: ADD doc :: {}".format(pid))
             adddoc.put(self.getKey(websocket, pid))
             await websocket.send("documents")
 
         elif cmd == "rmdoc":
             data = msg[2].split(" ")
             pid = data[0]
+            logger.debug(":: RM doc :: {}".format(pid))
             k = self.getKey(websocket, pid)
             try:
                 doc = activ_docs[k]
@@ -102,22 +106,23 @@ class LoolMonitor():
             except KeyError:
                 # Not in activ_docs
                 # Todo : query documents ?
+                logger.debug("RM Skip Not Found")
                 pass
 
         elif cmd == "loolserver":
             data = json.loads(msg[2])
-            logger.info(":: Lool Server Version :: {}".format(data))
+            logger.debug(":: Lool Server Version :: {}".format(data))
 
         elif cmd == "lokitversion":
             data = json.loads(msg[2])
-            logger.info(":: Lokit Version :: {}".format(data))
+            logger.debug(":: Lokit Version :: {}".format(data))
 
         elif cmd == "History":
             data = json.loads(msg[2])
-            logger.info(":: History :: {}".format(data))
+            logger.debug(":: History :: {}".format(data))
 
         else:
-            logger.info(":: Unknow Message :: {}".format(cmd))
+            logger.debug(":: Unknow Message :: {}".format(message))
 
     def getKey(self, websocket, pid):
         return "%s:%d/%s" % sum((websocket.remote_address, (pid,)), ())
@@ -173,6 +178,7 @@ class LoolMonitor():
                 functools.partial(self.ask_exit, signame))
 
     def start(self):
+        logger.info("Start Monitor")
         start_server = websockets.serve(self.handler,
                                         self.__host,
                                         self.__port,
