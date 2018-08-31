@@ -5,8 +5,13 @@ WORKDIR /usr/src/app
 ADD requirements.txt /usr/src/app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-ADD *.py /usr/src/app/
+ADD setup.py README.md LICENSE /usr/src/app/
+ADD loolmonitor /usr/src/app/loolmonitor/
+
+RUN	python setup.py install
 
 EXPOSE 8765/tcp
 
-CMD [ "python", "./main.py" ]
+ADD logging.conf .
+ADD entrypoint.sh /opt/
+ENTRYPOINT ["/opt/entrypoint.sh"]

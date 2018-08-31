@@ -10,6 +10,7 @@ import signal
 import queue
 import json
 
+logging.config.fileConfig('logging.conf', disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
 
 STATS_CMD = [
@@ -40,6 +41,7 @@ class LoolMonitor():
     """
 
     def __init__(self, host=None, port=8765):
+        logger.info("Starting Lool Monitor")
         self.__loop = None
         self.__host = host
         self.__port = port

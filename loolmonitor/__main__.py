@@ -1,4 +1,5 @@
 import logging
+import logging.config
 from multiprocessing import Process
 
 from .options import configs
@@ -6,31 +7,19 @@ from .LoolMonitor import LoolMonitor
 from .AlfrescoHandler import AlfrescoHandler
 
 
-ch = logging.StreamHandler()
+logging.config.fileConfig('logging.conf', disable_existing_loggers=False)
+
 # FORMAT = '%(asctime)-15s %(message)s'
 # logging.basicConfig(format=FORMAT)
-ch.setLevel(logging.DEBUG)
 
-logger = logging.getLogger('websockets')
-logger.setLevel(logging.WARN)
-logger.addHandler(ch)
-
-logger = logging.getLogger('LoolMonitor')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(ch)
-
-logger = logging.getLogger('AlfrescoHandler')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(ch)
+logger = logging.getLogger(__name__)
 
 
 def start_monitor(host=None, port=8765):
     monitor = LoolMonitor(host, port)
-    alfHandler = AlfrescoHandler(
-                    configs['user'],
-                    configs['password'],
-                    configs['webscript']
-    )
+    alfHandler = AlfrescoHandler(configs['user'],
+                                 configs['password'],
+                                 configs['webscript'])
     alfHandler.start()
     monitor.work_handler.append(alfHandler)
     monitor.start()

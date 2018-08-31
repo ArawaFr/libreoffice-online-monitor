@@ -6,7 +6,7 @@ import requests
 
 from multiprocessing import Process, Queue
 
-
+logging.config.fileConfig('logging.conf', disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
 
 r_uuid = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
@@ -23,11 +23,10 @@ class AlfrescoHandler(Process):
     def __init__(self, user, pwd, alf_ws="http://localhost:8080/alfresco/s/"):
         super(AlfrescoHandler, self).__init__()
         self.alf_ws = alf_ws if alf_ws[-1] != '/' else alf_ws[:-1]
+        logger.info("Alfresco Handler connect to {}@{}".format(user, self.alf_ws))
         self.__user = user
         self.__pwd = pwd
         self.__ticket = None
-        print("Alfresco Handler connect to {}@{}"
-              .format(self.__user, self.alf_ws))
 
     def ticket(self):
         if self.__ticket:
