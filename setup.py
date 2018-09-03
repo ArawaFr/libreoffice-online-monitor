@@ -10,7 +10,7 @@ with open('LICENSE') as f:
 
 setuptools.setup(
     name='lool-monitor',
-    version='0.1.0',
+    version='0.2.0',
     author='Jérémie Lesage',
     author_email='jeremie.lesage@jeci.fr',
     description='Web-socket serveur listening for Lool Admin Worker',
