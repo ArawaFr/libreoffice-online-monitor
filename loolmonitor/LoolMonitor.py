@@ -53,6 +53,45 @@ class LoolMonitor():
             message = await websocket.recv()
             await self.consumer(websocket, message)
 
+    def perform_adddoc(self, websocket, docs):
+        try:
+            while True:
+                adoc_pid = adddoc.get_nowait()
+                if adoc_pid is None:
+                    continue
+                for doc in docs:
+                    k = self.getKey(websocket, doc["pid"])
+                    if k == adoc_pid:
+                        self.adddoc(doc["docKey"])
+                        activ_docs[k] = doc
+                        adoc_pid = None
+                        break
+                adddoc.task_done()
+                if adoc_pid is not None:
+                    logger.error(f"FAIL ADD DOC, {adoc_pid} not in documents")
+        except queue.Empty:
+            pass
+
+    def perform_rmdoc(self, websocket, docs):
+        try:
+            while True:
+                rdoc_pid = rmdoc.get_nowait()
+                if rdoc_pid is None:
+                    continue
+                for doc in docs:
+                    k = self.getKey(websocket, doc["pid"])
+                    if k == rdoc_pid:
+                        rdoc_pid = None
+                        logger.debug(f"SKIP RM DOC, {rdoc_pid} still in documents")
+                        break
+                rmdoc.task_done()
+                if rdoc_pid is not None:
+                    doc = activ_docs[rdoc_pid]
+                    self.rmdoc(doc["docKey"])
+                    del activ_docs[rdoc_pid]
+        except queue.Empty:
+            pass
+
     async def consumer(self, websocket, message):
         msg = message.partition(" ")
         cmd = msg[0]
@@ -65,26 +104,8 @@ class LoolMonitor():
             data = json.loads(msg[2])
             docs = data["documents"]
             logger.debug(":: documents :: {}".format(docs))
-
-            try:
-                while True:
-                    adoc_pid = adddoc.get_nowait()
-                    if adoc_pid is None:
-                        continue
-                    for doc in docs:
-                        k = self.getKey(websocket, doc["pid"])
-                        if k == adoc_pid:
-                            self.adddoc(doc["docKey"])
-                            activ_docs[k] = doc
-                            adoc_pid = None
-                            break
-                    adddoc.task_done()
-                    if adoc_pid is not None:
-                        logger.error(
-                            ":: FAIL ADD DOC, {} not in documents"
-                            .format(adoc_pid))
-            except queue.Empty:
-                pass
+            self.perform_rmdoc(websocket, docs)
+            self.perform_adddoc(websocket, docs)
 
         elif cmd == "adddoc":
             data = msg[2].split(" ")
@@ -97,17 +118,8 @@ class LoolMonitor():
             data = msg[2].split(" ")
             pid = data[0]
             logger.debug(":: RM doc :: {}".format(pid))
-            k = self.getKey(websocket, pid)
-            try:
-                doc = activ_docs[k]
-                logger.debug(":: Treat Rm Doc {}= {}".format(k, doc["docKey"]))
-                self.rmdoc(doc["docKey"])
-                del activ_docs[k]
-            except KeyError:
-                # Not in activ_docs
-                # Todo : query documents ?
-                logger.debug("RM Skip Not Found")
-                pass
+            rmdoc.put(self.getKey(websocket, pid))
+            await websocket.send("documents")
 
         elif cmd == "loolserver":
             data = json.loads(msg[2])
