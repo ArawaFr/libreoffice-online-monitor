@@ -3,7 +3,10 @@ import argparse
 DEFAULT = {
     'user': 'admin',
     'password': 'admin',
-    'webscript': 'http://localhost:8080/alfresco/s/'
+    'webscript': 'http://localhost:8080/alfresco/s/',
+    'host': None,
+    'port': 8765,
+    'ssl': False
 }
 
 configs = {}
@@ -20,8 +23,20 @@ parser.add_argument("-u", "--user",
 parser.add_argument("-p", "--password",
                     help="Alfresco password account (default: {})"
                     .format(DEFAULT["password"]))
+parser.add_argument("-H", "--host",
+                    help="Monitor host (default: {})"
+                    .format(DEFAULT["host"]))
+parser.add_argument("-P", "--port",
+                    help="Monitor port (default: {})"
+                    .format(DEFAULT["port"]))
+parser.add_argument("-S", "--ssl",
+                    help="ssl (true|false) (default: {})"
+                    .format(DEFAULT["ssl"]))
 args = parser.parse_args()
 
 configs["webscript"] = args.webscript_uri or DEFAULT["webscript"]
 configs["user"] = args.user or DEFAULT["user"]
 configs["password"] = args.password or DEFAULT["password"]
+configs["host"] = args.host or DEFAULT["host"]
+configs["port"] = args.port or DEFAULT["port"]
+configs["ssl"] = args.ssl or DEFAULT["ssl"]

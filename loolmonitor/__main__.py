@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def start_monitor(host=None, port=8765):
-    monitor = LoolMonitor(host, port)
+    monitor = LoolMonitor(configs['host'], configs['port'])
     alfHandler = AlfrescoHandler(configs['user'],
                                  configs['password'],
                                  configs['webscript'])
