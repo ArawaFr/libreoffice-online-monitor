@@ -70,6 +70,7 @@ class AlfrescoHandler(Process):
         tasks.put(None)
 
     def get_aspect(self, uuid):
+        """Call list aspect webscript from Alfresco"""
         logger.debug("alfresco_handler->get_aspect")
         self.ticket()
         r_aspects = requests.get(
@@ -82,6 +83,7 @@ class AlfrescoHandler(Process):
         return j_aspects['current']
 
     def add_aspect(self, uuid, aspect):
+        """Call add aspect webscript from Alfresco"""
         logger.debug("alfresco_handler->add_aspect")
         self.ticket()
         r_payload = requests.post(
@@ -95,6 +97,7 @@ class AlfrescoHandler(Process):
         return r_payload.ok
 
     def rm_aspect(self, uuid, aspect):
+        """Call remove aspect webscript from Alfresco"""
         logger.debug("alfresco_handler->rm_aspect")
         self.ticket()
         r_payload = requests.post(
@@ -107,8 +110,21 @@ class AlfrescoHandler(Process):
         logger.debug("alfresco_handler response {}".format(r_payload.text))
         return r_payload.ok
 
+    def clean_version(self, uuid):
+        """Call clean webscript from Alfresco"""
+        logger.debug("alfresco_handler->rm_aspect")
+        self.ticket()
+        # Keep 10 last automatic versions
+        r_payload = requests.post(
+            "{}/lool/version/clean/workspace/SpacesStore/{}?keep_auto=10".format(self.alf_ws, uuid),
+            params={'alf_ticket': self.__ticket},
+            headers={"Content-type": "application/json"}
+        )
+        logger.debug("alfresco_handler response {}".format(r_payload.text))
+        return r_payload.ok
 
 class AddDocTask():
+    """Task job that """
     def __init__(self, docKey=None):
         self.docKey = docKey
 
@@ -130,6 +146,7 @@ class RmDocTask():
         aspects = alfHandler.get_aspect(uuid)
         if ASPECT_LOOL in aspects:
             alfHandler.rm_aspect(uuid, ASPECT_LOOL)
+            alfHandler.clean_version(uuid, ASPECT_LOOL)
 
 
 def extractUuid(docKey):
