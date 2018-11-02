@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+# Startup script for Lool Monitor (used for the Collabora Online Alfresco connector)
+#
+# chkconfig: 2345 50 50
+#
+### BEGIN INIT INFO
+# Provides: loolmonitor
+# Required-Start:	$network $local_fs
+# Required-Stop:	$network $local_fs
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Starts loolmonitor
+# Description: start the loolmonitor
+# processname: python3.6 -m loolmonitor
+### END INIT INFO
+
+# Source function library.
+. /etc/init.d/functions
+
+# configuration
+    [ -e /opt/loolmonitor/config.sh ] || exit 1
+    . /opt/loolmonitor/config.sh
+
+case "$1" in
+start)
+    echo -n "Starting $0 services: "
+    if [ ! -d /var/log/loolmonitor ]
+    then
+        mkdir /var/log/loolmonitor
+    fi
+    cd /opt/loolmonitor || exit 1
+    echo "starting the loolmonitor for $server" >>/var/log/loolmonitor/loolmonitor.log
+    python3.6 -m loolmonitor -w https://$server/alfresco/s/ -u $username -p $password </dev/null >>/var/log/loolmonitor/loolmonitor.log 2>&1 & disown
+    ;;
+stop)
+    echo -n "Stopping $0 services: "
+    pkill -f "python3.6 -m loolmonitor"
+    ;;
+status)
+    n=$(pgrep -cf "python3.6 -m loolmonitor")
+    if [ "$n" -lt 3 ]; then
+	echo >&2 'KO'
+    else
+	echo >&2 "OK: $n loolmonitor"
+	echo >&2 `pgrep -fl "python3.6 -m loolmonitor"`
+    fi
+    ;;
+restart|reload|force-reload)
+    $0 stop
+    sleep 1
+    $0 start
+    ;;
+condrestart)
+    $0 status
+    if [ $? -eq 0 ]; then
+      $0 stop
+      $0 start
+    fi
+    ;;
+*)
+    echo $"Usage: $0 {start|stop|status|restart|reload|force-reload}"
+    exit 1
+esac
+exit 0
