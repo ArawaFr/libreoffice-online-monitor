@@ -146,7 +146,7 @@ class RmDocTask():
         aspects = alfHandler.get_aspect(uuid)
         if ASPECT_LOOL in aspects:
             alfHandler.rm_aspect(uuid, ASPECT_LOOL)
-            alfHandler.clean_version(uuid, ASPECT_LOOL)
+            alfHandler.clean_version(uuid)
 
 
 def extractUuid(docKey):
