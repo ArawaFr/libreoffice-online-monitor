@@ -31,11 +31,13 @@ start)
     fi
     cd /opt/loolmonitor || exit 1
     echo "starting the loolmonitor for $server" >>/var/log/loolmonitor/loolmonitor.log
-    python3.6 -m loolmonitor -w https://$server/alfresco/s/ -u $username -p $password </dev/null >>/var/log/loolmonitor/loolmonitor.log 2>&1 & disown
+    nohup /bin/python3.6 -m loolmonitor -c /opt/loolmonitor/loolmonitor-py.conf </dev/null >>/var/log/loolmonitor/loolmonitor.log 2>&1 &
+    echo $! > /var/run/loolmonitor.pid
     ;;
 stop)
     echo -n "Stopping $0 services: "
-    pkill -f "python3.6 -m loolmonitor"
+    pkill -P $(cat /var/run/loolmonitor.pid)
+    rm /var/run/loolmonitor.pid
     ;;
 status)
     n=$(pgrep -cf "python3.6 -m loolmonitor")
