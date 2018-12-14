@@ -1,0 +1,16 @@
+[Unit]
+Description=loolmonitor
+After=network.target
+ConditionPathExists=/opt/loolmonitor/loolmonitor-py.conf
+
+
+[Service]
+ExecStart=/bin/bash -c "/bin/python3.6 -m loolmonitor -c /opt/loolmonitor/loolmonitor-py.conf </dev/null >>/var/log/loolmonitor/loolmonitor.log 2>&1 "
+ExecStartPost=/bin/bash -c "/bin/echo $MAINPID > /var/run/loolmonitor.pid"
+PIDFile=/var/run/loolmonitor.pid
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
+

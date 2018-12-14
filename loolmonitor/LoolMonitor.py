@@ -9,8 +9,11 @@ import os
 import signal
 import queue
 import json
+import ssl
 
-logging.config.fileConfig('logging.conf', disable_existing_loggers=False)
+from .options import configs
+
+logging.config.fileConfig(configs['logging'], disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
 
 STATS_CMD = [
@@ -40,11 +43,12 @@ class LoolMonitor():
     Catch SIGINT and SIGTERM to stop the server
     """
 
-    def __init__(self, host=None, port=8765):
+    def __init__(self, host=None, port=8765,use_ssl=False):
         logger.info("Starting Lool Monitor")
         self.__loop = None
         self.__host = host
         self.__port = port
+        self.__use_ssl = use_ssl
         self.connected = set()
         self.work_handler = []
 
@@ -191,12 +195,22 @@ class LoolMonitor():
 
     def start(self):
         logger.info("Start Monitor")
-        start_server = websockets.serve(self.handler,
+        if self.__use_ssl:
+            logger.info("using SSL")
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_context.load_cert_chain(configs["fullchain"],configs["privkey.pem"])
+            start_server = websockets.serve(self.handler,
+                                        self.__host,
+                                        self.__port,
+                                        family=socket.AF_INET, ssl=ssl_context)
+            logger.info("listening on 'wss://{}:{}'".format(self.__host, self.__port))
+        else:
+            start_server = websockets.serve(self.handler,
                                         self.__host,
                                         self.__port,
                                         family=socket.AF_INET, ssl=None)
+            logger.info("listening on 'ws://{}:{}'".format(self.__host, self.__port))
 
-        logger.info("listing on 'ws://{}:{}'".format(self.__host, self.__port))
         logger.info("Event loop running forever, press Ctrl+C to interrupt.")
         logger.info("pid %s: send SIGINT or SIGTERM to exit." % os.getpid())
 

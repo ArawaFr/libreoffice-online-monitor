@@ -6,7 +6,11 @@ import requests
 
 from multiprocessing import Process, Queue
 
-logging.config.fileConfig('logging.conf', disable_existing_loggers=False)
+
+from .options import configs
+logging.config.fileConfig(configs['logging'], disable_existing_loggers=False)
+
+#logging.config.fileConfig('logging.conf', disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
 
 r_uuid = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
