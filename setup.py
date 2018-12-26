@@ -19,7 +19,9 @@ setuptools.setup(
     url='https://github.com/ArawaFr/libreoffice-online-monitor',
     license=license,
     packages=setuptools.find_packages(),
-    package_data={'loolmonitor': ['service/*']},
+    package_data={
+        'loolmonitor': ['INSTALL.README', '*.bash', 'service/*', 'systemd/*', 'conf/*']
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",

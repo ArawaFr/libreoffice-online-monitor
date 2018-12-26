@@ -1,0 +1,51 @@
+
+#########################################
+	INSTALLATION
+#########################################
+
+
+- configuration's file
+
+		sudo ./install-config.bash
+
+- init script
+
+	systemd
+
+		sudo ./install-systemd.bash
+
+	or
+
+	service
+
+		sudo ./install-service.bash
+	
+
+#########################################
+	CONFIGURATION
+#########################################
+
+
+Edit configuration files as needed :
+
+	/opt/loolmonitor/loolmonitor-py.conf
+	/opt/loolmonitor/logging.conf
+
+
+#########################################
+	START / STOP / STATUS 	
+#########################################
+
+
+	for systemd :
+
+		sudo systemctl start loolmonitor.service
+		sudo systemctl stop loolmonitor.service
+		sudo systemctl status loolmonitor.service
+		
+
+	for service (systemV)
+
+		sudo service loolmonitor start
+		sudo service loolmonitor stop
+		sudo ervice loolmonitor status
